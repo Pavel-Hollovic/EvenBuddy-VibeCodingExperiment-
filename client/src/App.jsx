@@ -15,6 +15,7 @@ import {
 } from './api.js';
 
 const LOCAL_STORAGE_KEY = 'eventBuddyProfile';
+const THEME_STORAGE_KEY = 'eventBuddyTheme';
 const EMPTY_DATE_RANGE = { start: '', end: '' };
 
 const TIME_FILTERS = [
@@ -214,6 +215,28 @@ function sanitizeEvent(rawEvent) {
 }
 
 export default function App() {
+  const [hasStoredThemePreference, setHasStoredThemePreference] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return stored === 'dark' || stored === 'light';
+  });
+
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === 'undefined') {
+      return 'light';
+    }
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === 'dark' || stored === 'light') {
+      return stored;
+    }
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+    return prefersDark ? 'dark' : 'light';
+  });
+
+  const isDarkMode = theme === 'dark';
+
   const [profile, setProfile] = useState(() => loadStoredProfile());
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(new Set());
@@ -228,6 +251,61 @@ export default function App() {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [detailsEventId, setDetailsEventId] = useState(null);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const { body } = document;
+    if (!body) {
+      return;
+    }
+    body.classList.toggle('dark-mode', isDarkMode);
+    body.dataset.theme = theme;
+    return () => {
+      body.classList.remove('dark-mode');
+      delete body.dataset.theme;
+    };
+  }, [isDarkMode, theme]);
+
+  useEffect(() => {
+    if (!hasStoredThemePreference) {
+      return;
+    }
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (error) {
+      console.warn('Failed to persist theme preference', error);
+    }
+  }, [hasStoredThemePreference, theme]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (hasStoredThemePreference) {
+      return;
+    }
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (event) => {
+      setTheme(event.matches ? 'dark' : 'light');
+    };
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', handleChange);
+    } else if (typeof media.addListener === 'function') {
+      media.addListener(handleChange);
+    }
+    return () => {
+      if (typeof media.removeEventListener === 'function') {
+        media.removeEventListener('change', handleChange);
+      } else if (typeof media.removeListener === 'function') {
+        media.removeListener(handleChange);
+      }
+    };
+  }, [hasStoredThemePreference]);
 
   useEffect(() => {
     let cancelled = false;
@@ -434,6 +512,14 @@ export default function App() {
     return 'Discover events nearby and meet people who love what you love.';
   }, [profile]);
 
+  const themeToggleText = isDarkMode ? 'Light' : 'Dark';
+  const themeToggleA11yLabel = isDarkMode ? 'Switch to light mode' : 'Switch to dark mode';
+
+  const handleToggleTheme = useCallback(() => {
+    setTheme((previous) => (previous === 'dark' ? 'light' : 'dark'));
+    setHasStoredThemePreference(true);
+  }, []);
+
   const handleSignOut = useCallback(() => {
     setProfile(null);
     setEvents([]);
@@ -469,6 +555,16 @@ export default function App() {
 
   return (
     <div className="app">
+      <button
+        type="button"
+        className={`theme-toggle${isDarkMode ? ' is-dark' : ''}`}
+        onClick={handleToggleTheme}
+        aria-pressed={isDarkMode}
+        aria-label={themeToggleA11yLabel}
+      >
+        <span className="theme-toggle__indicator" aria-hidden="true" />
+        <span className="theme-toggle__label">{themeToggleText} mode</span>
+      </button>
       <header>
         <div className="branding">
           <h1>Event Buddy</h1>
