@@ -3,8 +3,18 @@ export default function FilterBar({
   selectedCategories,
   onToggleCategory,
   dateRange,
-  onChangeDateRange
+  onChangeDateRange,
+  timeFilters,
+  selectedTimeFilter,
+  onSelectTimeFilter
 }) {
+  const hasTimeFilters = Array.isArray(timeFilters) && timeFilters.length;
+  const handleTimeFilterClick = (value) => {
+    if (typeof onSelectTimeFilter === 'function') {
+      onSelectTimeFilter(value);
+    }
+  };
+
   return (
     <div className="card filter-card">
       <h3>Filters</h3>
@@ -23,6 +33,24 @@ export default function FilterBar({
           ))}
         </div>
       </div>
+      {hasTimeFilters && (
+        <div className="filter-group">
+          <span className="filter-label">When</span>
+          <div className="filter-quick-options">
+            {timeFilters.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                className={`time-filter-button${selectedTimeFilter === value ? ' is-active' : ''}`}
+                onClick={() => handleTimeFilterClick(value)}
+                aria-pressed={selectedTimeFilter === value}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="filter-group">
         <span className="filter-label">Date range</span>
         <div className="filter-dates">
