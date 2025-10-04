@@ -356,6 +356,10 @@ button:not(:disabled):hover {
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
+.stack strong {
+  color: #2d1746;
+}
+
 .stack:hover {
   border-color: rgba(234, 76, 137, 0.35);
   background: rgba(252, 232, 255, 0.95);
@@ -367,6 +371,28 @@ button:not(:disabled):hover {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.event-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-ticketmaster {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .pill {
@@ -398,6 +424,33 @@ button:not(:disabled):hover {
 .attendees {
   font-size: 13px;
   color: #734585;
+}
+
+.venue {
+  font-size: 13px;
+  color: #5b2d82;
+}
+
+.ticketmaster-event .stack {
+  background: rgba(221, 239, 255, 0.92);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.ticketmaster-event .stack:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  transform: translateY(-1px);
+}
+
+.ticketmaster-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+}
+
+.ticketmaster-link:hover {
+  transform: translateY(-1px);
 }
 
 .join-button {

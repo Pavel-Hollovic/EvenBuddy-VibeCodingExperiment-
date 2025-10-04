@@ -15,6 +15,8 @@ function MapClickHandler({ onMapClick }) {
 function EventMarker({ event, isSelected, onSelectEvent, onJoin, joining, alreadyJoined }) {
   const popupRef = useRef(null);
   const map = useMap();
+  const isTicketmaster = event.source === 'ticketmaster';
+  const ticketmasterUrl = event.externalUrl || 'https://www.ticketmaster.com/';
 
   useEffect(() => {
     if (isSelected && popupRef.current) {
@@ -31,16 +33,33 @@ function EventMarker({ event, isSelected, onSelectEvent, onJoin, joining, alread
       <Popup ref={popupRef} className="event-popup">
         <div className="popup-content">
           <h4>{event.name}</h4>
+          {isTicketmaster && <span className="badge badge-ticketmaster">Ticketmaster</span>}
           <p>{new Date(event.dateTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
-          <p className="muted">{event.attendees.length} attending</p>
-          <button
-            type="button"
-            className="join-button"
-            onClick={() => onJoin(event.id)}
-            disabled={alreadyJoined || joining}
-          >
-            {alreadyJoined ? 'You joined' : joining ? 'Joining…' : 'Join event'}
-          </button>
+          {isTicketmaster ? (
+            <>
+              {event.venueName && <p className="muted">Venue: {event.venueName}</p>}
+              <a
+                href={ticketmasterUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="join-button ticketmaster-link"
+              >
+                View tickets
+              </a>
+            </>
+          ) : (
+            <>
+              <p className="muted">{event.attendees.length} attending</p>
+              <button
+                type="button"
+                className="join-button"
+                onClick={() => onJoin(event.id)}
+                disabled={alreadyJoined || joining}
+              >
+                {alreadyJoined ? 'You joined' : joining ? 'Joining…' : 'Join event'}
+              </button>
+            </>
+          )}
         </div>
       </Popup>
     </Marker>

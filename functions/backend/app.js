@@ -14,6 +14,7 @@ import {
   getEvent
 } from './store.js';
 import { seedInitialData } from './seed.js';
+import { syncTicketmasterEvents } from './ticketmaster.js';
 
 function asyncHandler(fn) {
   return (req, res, next) => {
@@ -22,6 +23,7 @@ function asyncHandler(fn) {
 }
 
 let seedReady = null;
+let ticketmasterSyncStarted = false;
 
 function ensureSeedReady() {
   if (!seedReady) {
@@ -30,11 +32,36 @@ function ensureSeedReady() {
   return seedReady;
 }
 
+function ensureTicketmasterSync() {
+  if (ticketmasterSyncStarted) {
+    return;
+  }
+  ticketmasterSyncStarted = true;
+
+  ensureSeedReady()
+    ?.catch((error) => {
+      console.error('Ticketmaster sync waiting for seed failed', {
+        message: error?.message,
+        stack: error?.stack
+      });
+    })
+    .finally(() => {
+      syncTicketmasterEvents().catch((error) => {
+        console.error('Initial Ticketmaster sync failed', {
+          message: error?.message,
+          stack: error?.stack
+        });
+      });
+    });
+}
+
 export function createApp() {
   const app = express();
 
   app.use(cors());
   app.use(express.json());
+
+  ensureTicketmasterSync();
 
   app.use((req, res, next) => {
     const promise = ensureSeedReady();
