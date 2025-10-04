@@ -107,6 +107,27 @@ function getDateRangeForPreset(preset, reference = new Date()) {
   return { ...EMPTY_DATE_RANGE };
 }
 
+function sanitizeProfile(rawProfile) {
+  if (!rawProfile || typeof rawProfile !== 'object') {
+    return null;
+  }
+
+  const id =
+    typeof rawProfile.id === 'string'
+      ? rawProfile.id.trim()
+      : rawProfile.id != null
+        ? String(rawProfile.id).trim()
+        : '';
+  const email = typeof rawProfile.email === 'string' ? rawProfile.email.trim() : '';
+  const name = typeof rawProfile.name === 'string' ? rawProfile.name.trim() : '';
+
+  if (!id || !email) {
+    return null;
+  }
+
+  return { id, email, name };
+}
+
 function loadStoredProfile() {
   if (typeof window === 'undefined') return null;
   try {
@@ -115,10 +136,7 @@ function loadStoredProfile() {
       return null;
     }
     const parsed = JSON.parse(stored);
-    if (!parsed || typeof parsed.email !== 'string') {
-      return null;
-    }
-    return parsed;
+    return sanitizeProfile(parsed);
   } catch (error) {
     console.warn('Failed to load profile from storage', error);
     return null;
@@ -127,7 +145,12 @@ function loadStoredProfile() {
 
 function storeProfile(profile) {
   try {
-    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
+    const sanitized = sanitizeProfile(profile);
+    if (!sanitized) {
+      clearProfile();
+      return;
+    }
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sanitized));
   } catch (error) {
     console.warn('Failed to persist profile', error);
   }
@@ -145,6 +168,49 @@ function toIsoOrEmpty(value) {
   if (!value) return '';
   const date = new Date(value);
   return Number.isNaN(date.valueOf()) ? '' : date.toISOString();
+}
+
+function sanitizeEvent(rawEvent) {
+  if (!rawEvent || typeof rawEvent !== 'object') {
+    return null;
+  }
+
+  const id =
+    typeof rawEvent.id === 'string'
+      ? rawEvent.id.trim()
+      : rawEvent.id != null
+        ? String(rawEvent.id).trim()
+        : '';
+  const name = typeof rawEvent.name === 'string' ? rawEvent.name.trim() : '';
+  const category = typeof rawEvent.category === 'string' ? rawEvent.category.trim() : '';
+  const dateTime = toIsoOrEmpty(rawEvent.dateTime);
+  const lat = Number(rawEvent?.location?.lat);
+  const lng = Number(rawEvent?.location?.lng);
+
+  if (!id || !dateTime || Number.isNaN(lat) || Number.isNaN(lng)) {
+    return null;
+  }
+
+  const attendees = Array.isArray(rawEvent.attendees)
+    ? rawEvent.attendees.filter((attendee) => typeof attendee === 'string' && attendee.trim())
+    : [];
+
+  const venueName = typeof rawEvent.venueName === 'string' ? rawEvent.venueName : null;
+  const externalUrl = typeof rawEvent.externalUrl === 'string' ? rawEvent.externalUrl : null;
+  const source = typeof rawEvent.source === 'string' ? rawEvent.source : 'user';
+
+  return {
+    ...rawEvent,
+    id,
+    name: name || 'Untitled event',
+    category: category || 'Other',
+    dateTime,
+    location: { lat, lng },
+    attendees,
+    venueName,
+    externalUrl,
+    source
+  };
 }
 
 export default function App() {
@@ -192,7 +258,16 @@ export default function App() {
         start: toIsoOrEmpty(dateRange.start),
         end: toIsoOrEmpty(dateRange.end)
       });
-      setEvents(fetchedEvents);
+      const sanitizedEvents = Array.isArray(fetchedEvents)
+        ? fetchedEvents.map(sanitizeEvent).filter(Boolean)
+        : [];
+      setEvents(sanitizedEvents);
+      if (Array.isArray(fetchedEvents) && sanitizedEvents.length !== fetchedEvents.length) {
+        console.warn('Dropped events with invalid data', {
+          received: fetchedEvents.length,
+          kept: sanitizedEvents.length
+        });
+      }
     } catch (error) {
       console.error('Failed to load events', error);
       setErrorMessage('Unable to load events. Please try again.');
@@ -226,11 +301,16 @@ export default function App() {
     setCreatingProfile(true);
     setErrorMessage('');
     try {
-      const profile =
+      const apiProfile =
         mode === 'register'
           ? await apiRegisterProfile({ name, email, password })
           : await apiLogin({ email, password });
-      setProfile(profile);
+      const sanitizedProfile = sanitizeProfile(apiProfile);
+      if (!sanitizedProfile) {
+        setErrorMessage('We could not verify your profile data. Please try again.');
+        return;
+      }
+      setProfile(sanitizedProfile);
     } catch (error) {
       console.error('Authentication failed', error);
       const message = error?.message || '';
@@ -342,7 +422,14 @@ export default function App() {
 
   const heroCopy = useMemo(() => {
     if (profile) {
-      return `Welcome back, ${profile.name.split(' ')[0]}!`;
+      const trimmedName = typeof profile.name === 'string' ? profile.name.trim() : '';
+      if (trimmedName) {
+        const [firstWord] = trimmedName.split(/\s+/);
+        if (firstWord) {
+          return `Welcome back, ${firstWord}!`;
+        }
+      }
+      return 'Welcome back! Ready for your next event?';
     }
     return 'Discover events nearby and meet people who love what you love.';
   }, [profile]);
@@ -406,8 +493,8 @@ export default function App() {
           <aside>
             <div className="card profile-summary">
               <h3>Your profile</h3>
-              <p className="profile-name">{profile.name}</p>
-              <p className="muted profile-email">{profile.email}</p>
+              <p className="profile-name">{profile?.name?.trim() || 'Event buddy'}</p>
+              <p className="muted profile-email">{profile?.email}</p>
               <p className="muted">Your name helps friends recognize you. Email keeps your events in sync.</p>
             </div>
             <FilterBar
@@ -455,7 +542,7 @@ export default function App() {
           event={detailsEvent}
           onClose={handleCloseEventDetails}
           currentUserId={profile.id}
-          currentUserName={profile.name}
+          currentUserName={profile?.name?.trim() || 'Event buddy'}
         />
       )}
     </div>

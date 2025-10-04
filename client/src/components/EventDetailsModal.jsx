@@ -35,8 +35,20 @@ export default function EventDetailsModal({
   currentUserName
 }) {
   const isTicketmaster = event?.source === 'ticketmaster';
+  const categoryLabel = useMemo(
+    () => (typeof event?.category === 'string' && event.category.trim() ? event.category : 'Other'),
+    [event?.category]
+  );
+  const categoryClassName = useMemo(
+    () => `pill pill-${categoryLabel.toLowerCase().replace(/[^a-z0-9-]+/g, '-')}`,
+    [categoryLabel]
+  );
   const formattedDate = useMemo(() => (event ? formatDateTime(event.dateTime) : ''), [event]);
   const formattedLocation = useMemo(() => formatLatLng(event?.location), [event?.location]);
+  const attendeeCount = useMemo(
+    () => (Array.isArray(event?.attendees) ? event.attendees.length : 0),
+    [event?.attendees]
+  );
 
   if (!event) {
     return null;
@@ -62,7 +74,7 @@ export default function EventDetailsModal({
         <header className="modal-header">
           <div className="modal-title">
             <h2>{event.name}</h2>
-            <span className={`pill pill-${event.category.toLowerCase()}`}>{event.category}</span>
+            <span className={categoryClassName}>{categoryLabel}</span>
             {isTicketmaster && <span className="badge badge-ticketmaster">Ticketmaster</span>}
           </div>
           <p className="muted modal-datetime">{formattedDate}</p>
@@ -71,7 +83,7 @@ export default function EventDetailsModal({
         <section className="modal-details">
           {!isTicketmaster && (
             <p className="muted">
-              <strong className="modal-detail-label">Attendees:</strong> {event.attendees.length}
+              <strong className="modal-detail-label">Attendees:</strong> {attendeeCount}
             </p>
           )}
           {formattedLocation && (

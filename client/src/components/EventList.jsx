@@ -32,9 +32,14 @@ export default function EventList({
       <ul>
         {events.map((event) => {
           const isTicketmaster = event.source === 'ticketmaster';
-          const alreadyJoined = event.attendees.includes(currentUserId);
+          const attendees = Array.isArray(event.attendees) ? event.attendees : [];
+          const alreadyJoined = currentUserId ? attendees.includes(currentUserId) : false;
           const joining = joiningIds.has(event.id);
           const ticketmasterUrl = event.externalUrl || 'https://www.ticketmaster.com/';
+          const categoryLabel = typeof event.category === 'string' && event.category.trim() ? event.category : 'Other';
+          const categoryClass = `pill pill-${categoryLabel
+            .toLowerCase()
+            .replace(/[^a-z0-9-]+/g, '-')}`;
           return (
             <li key={event.id} className={isTicketmaster ? 'ticketmaster-event' : ''}>
               <button type="button" className="stack" onClick={() => onSelectEvent(event.id)}>
@@ -42,14 +47,14 @@ export default function EventList({
                   <strong>{event.name}</strong>
                   <span className="event-badges">
                     {isTicketmaster && <span className="badge badge-ticketmaster">Ticketmaster</span>}
-                    <span className={`pill pill-${event.category.toLowerCase()}`}>{event.category}</span>
+                    <span className={categoryClass}>{categoryLabel}</span>
                   </span>
                 </div>
                 <span className="muted">{formatDate(event.dateTime)}</span>
                 {isTicketmaster ? (
                   <span className="muted venue">{event.venueName ? `Venue: ${event.venueName}` : 'Official listing'}</span>
                 ) : (
-                  <span className="muted attendees">{event.attendees.length} going</span>
+                  <span className="muted attendees">{attendees.length} going</span>
                 )}
               </button>
               <div className="event-actions">

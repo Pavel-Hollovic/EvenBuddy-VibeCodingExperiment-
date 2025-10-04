@@ -27,6 +27,7 @@ function EventMarker({ event, isSelected, onSelectEvent, onJoin, joining, alread
   const map = useMap();
   const isTicketmaster = event.source === 'ticketmaster';
   const ticketmasterUrl = event.externalUrl || 'https://www.ticketmaster.com/';
+  const attendees = Array.isArray(event.attendees) ? event.attendees : [];
 
   useEffect(() => {
     if (isSelected && popupRef.current) {
@@ -60,7 +61,7 @@ function EventMarker({ event, isSelected, onSelectEvent, onJoin, joining, alread
             </>
           ) : (
             <>
-              <p className="muted">{event.attendees.length} attending</p>
+              <p className="muted">{attendees.length} attending</p>
               <button
                 type="button"
                 className="join-button"
