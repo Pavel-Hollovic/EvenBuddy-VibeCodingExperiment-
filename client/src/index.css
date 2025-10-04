@@ -323,11 +323,38 @@ button:not(:disabled):hover {
   overflow: hidden;
   border: 1px solid rgba(210, 153, 255, 0.35);
   box-shadow: rgba(120, 69, 190, 0.12) 0 24px 42px -24px;
+  position: relative;
 }
 
 .map {
   height: 100%;
   width: 100%;
+}
+
+.locate-button {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: rgba(28, 22, 45, 0.18) 0 12px 24px -12px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3d1d63;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.locate-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: rgba(28, 22, 45, 0.26) 0 18px 32px -16px;
+}
+
+.locate-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
 }
 
 .event-list ul {
@@ -344,6 +371,18 @@ button:not(:disabled):hover {
   grid-template-columns: 1fr auto;
   gap: 12px;
   align-items: center;
+}
+
+.event-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.event-actions .join-button,
+.event-actions .ticketmaster-link {
+  width: 120px;
 }
 
 .stack {
@@ -462,6 +501,25 @@ button:not(:disabled):hover {
   color: #9d7dbd;
 }
 
+.secondary-button {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(210, 153, 255, 0.45);
+  color: #4f1d75;
+  box-shadow: none;
+}
+
+.secondary-button:hover {
+  background: rgba(249, 237, 255, 0.96);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .loading {
   background: rgba(248, 236, 255, 0.9);
   border: 1px solid rgba(210, 153, 255, 0.3);
@@ -572,6 +630,98 @@ button:not(:disabled):hover {
 
 .remaining-characters {
   font-size: 12px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 11, 51, 0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.modal-card {
+  position: relative;
+  width: min(640px, 100%);
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(248, 236, 255, 0.92));
+  border-radius: 24px;
+  padding: 28px 26px;
+  box-shadow: rgba(120, 69, 190, 0.25) 0 36px 64px -30px;
+  border: 1px solid rgba(210, 153, 255, 0.32);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #4f1d75;
+  border: 1px solid rgba(210, 153, 255, 0.45);
+  box-shadow: none;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-close:hover {
+  background: rgba(249, 237, 255, 0.96);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.modal-title h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #341645;
+}
+
+.modal-datetime {
+  margin: 0;
+}
+
+.modal-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-detail-label {
+  color: #43176b;
+}
+
+.modal-link {
+  align-self: flex-start;
+  color: #1d4ed8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.modal-link:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 960px) {

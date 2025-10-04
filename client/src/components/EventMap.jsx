@@ -1,7 +1,8 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const DEFAULT_POSITION = [40.7128, -74.006];
+const USER_LOCATION_ZOOM = 13;
 
 function MapClickHandler({ onMapClick }) {
   useMapEvents({
@@ -76,9 +77,71 @@ export default function EventMap({
   currentUserId,
   joiningIds
 }) {
+  const [mapInstance, setMapInstance] = useState(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const autoLocateAttemptedRef = useRef(false);
+  const locatingRef = useRef(false);
+
+  const locateUser = useCallback(
+    ({ silent = false } = {}) => {
+      if (!mapInstance || typeof navigator === 'undefined' || !navigator.geolocation) {
+        return;
+      }
+
+      if (locatingRef.current) {
+        return;
+      }
+
+      locatingRef.current = true;
+      if (!silent) {
+        setIsLocating(true);
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          locatingRef.current = false;
+          if (!silent) {
+            setIsLocating(false);
+          }
+
+          const targetZoom = Math.max(mapInstance.getZoom(), USER_LOCATION_ZOOM);
+          mapInstance.flyTo([coords.latitude, coords.longitude], targetZoom, { duration: 0.75 });
+        },
+        (error) => {
+          locatingRef.current = false;
+          if (!silent) {
+            setIsLocating(false);
+          }
+          console.warn('Unable to determine user location', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        }
+      );
+    },
+    [mapInstance]
+  );
+
+  useEffect(() => {
+    if (!mapInstance || autoLocateAttemptedRef.current) {
+      return;
+    }
+
+    autoLocateAttemptedRef.current = true;
+    locateUser({ silent: true });
+  }, [locateUser, mapInstance]);
+
   return (
     <div className="map-wrapper">
-      <MapContainer center={DEFAULT_POSITION} zoom={12} scrollWheelZoom className="map">
+      <MapContainer
+        center={DEFAULT_POSITION}
+        zoom={12}
+        scrollWheelZoom
+        className="map"
+        whenCreated={setMapInstance}
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -101,6 +164,15 @@ export default function EventMap({
           </Marker>
         )}
       </MapContainer>
+      <button
+        type="button"
+        className="locate-button"
+        onClick={() => locateUser()}
+        disabled={isLocating}
+        aria-label="Locate nearby events"
+      >
+        {isLocating ? 'Locating…' : 'Locate'}
+      </button>
     </div>
   );
 }

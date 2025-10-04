@@ -1,9 +1,12 @@
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
 import { upsertTicketmasterEvents } from './store.js';
+
+dayjs.extend(utc);
 
 const API_KEY = process.env.TICKETMASTER_API_KEY || 'dejl1yvYcanCLRs3MJwi1PPcxSd8t2PA';
 const BASE_URL = 'https://app.ticketmaster.com/discovery/v2/events.json';
-const DEFAULT_COORDINATES = { lat: 40.7128, lng: -74.006 };
+const DEFAULT_COORDINATES = { lat: 50.0755, lng: 14.4378 };
 const DEFAULT_RADIUS_MILES = Number(process.env.TICKETMASTER_RADIUS_MILES || 50);
 const DEFAULT_SIZE = Number(process.env.TICKETMASTER_EVENT_LIMIT || 100);
 
@@ -100,7 +103,7 @@ export async function fetchTicketmasterEvents({ lat = DEFAULT_COORDINATES.lat, l
   url.searchParams.set('sort', 'date,asc');
   url.searchParams.set('size', Math.min(size, 200));
   url.searchParams.set('locale', '*');
-  url.searchParams.set('startDateTime', dayjs().subtract(1, 'hour').toISOString());
+  url.searchParams.set('startDateTime', dayjs().utc().subtract(1, 'hour').format('YYYY-MM-DDTHH:mm:ss[Z]'));
 
   const response = await fetch(url.toString());
   if (!response.ok) {

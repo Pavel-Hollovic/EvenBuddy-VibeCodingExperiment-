@@ -4,7 +4,7 @@ import FilterBar from './components/FilterBar.jsx';
 import EventForm from './components/EventForm.jsx';
 import EventList from './components/EventList.jsx';
 import EventMap from './components/EventMap.jsx';
-import EventDiscussion from './components/EventDiscussion.jsx';
+import EventDetailsModal from './components/EventDetailsModal.jsx';
 import {
   registerProfile as apiRegisterProfile,
   login as apiLogin,
@@ -161,6 +161,7 @@ export default function App() {
   const [newEventLocation, setNewEventLocation] = useState(null);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [detailsEventId, setDetailsEventId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,7 +217,10 @@ export default function App() {
     if (selectedEventId && !events.some((event) => event.id === selectedEventId)) {
       setSelectedEventId(null);
     }
-  }, [events, selectedEventId]);
+    if (detailsEventId && !events.some((event) => event.id === detailsEventId)) {
+      setDetailsEventId(null);
+    }
+  }, [events, selectedEventId, detailsEventId]);
 
   const handleAuth = useCallback(async ({ mode, name, email, password }) => {
     setCreatingProfile(true);
@@ -333,6 +337,7 @@ export default function App() {
   const handleMapClick = (location) => {
     setNewEventLocation(location);
     setSelectedEventId(null);
+    setDetailsEventId(null);
   };
 
   const heroCopy = useMemo(() => {
@@ -350,6 +355,7 @@ export default function App() {
     setSelectedTimeFilter(null);
     setNewEventLocation(null);
     setSelectedEventId(null);
+    setDetailsEventId(null);
     setJoiningIds(new Set());
     setErrorMessage('');
     setCreatingEvent(false);
@@ -357,10 +363,22 @@ export default function App() {
     setLoadingEvents(false);
   }, []);
 
-  const selectedEvent = useMemo(
-    () => events.find((event) => event.id === selectedEventId) || null,
-    [events, selectedEventId]
+  const detailsEvent = useMemo(
+    () => events.find((event) => event.id === detailsEventId) || null,
+    [events, detailsEventId]
   );
+
+  const handleShowEventDetails = useCallback(
+    (eventId) => {
+      setSelectedEventId(eventId);
+      setDetailsEventId(eventId);
+    },
+    []
+  );
+
+  const handleCloseEventDetails = useCallback(() => {
+    setDetailsEventId(null);
+  }, []);
 
   return (
     <div className="app">
@@ -427,16 +445,18 @@ export default function App() {
               currentUserId={profile.id}
               joiningIds={joiningIds}
               onSelectEvent={setSelectedEventId}
+              onShowDetails={handleShowEventDetails}
             />
-            {selectedEvent && (
-              <EventDiscussion
-                event={selectedEvent}
-                currentUserId={profile.id}
-                currentUserName={profile.name}
-              />
-            )}
           </main>
         </div>
+      )}
+      {detailsEvent && (
+        <EventDetailsModal
+          event={detailsEvent}
+          onClose={handleCloseEventDetails}
+          currentUserId={profile.id}
+          currentUserName={profile.name}
+        />
       )}
     </div>
   );

@@ -9,7 +9,14 @@ function formatDate(isoString) {
   }
 }
 
-export default function EventList({ events, onJoin, currentUserId, joiningIds, onSelectEvent }) {
+export default function EventList({
+  events,
+  onJoin,
+  currentUserId,
+  joiningIds,
+  onSelectEvent,
+  onShowDetails
+}) {
   if (!events.length) {
     return (
       <div className="card event-list">
@@ -45,25 +52,34 @@ export default function EventList({ events, onJoin, currentUserId, joiningIds, o
                   <span className="muted attendees">{event.attendees.length} going</span>
                 )}
               </button>
-              {isTicketmaster ? (
-                <a
-                  href={ticketmasterUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="join-button ticketmaster-link"
-                >
-                  View tickets
-                </a>
-              ) : (
+              <div className="event-actions">
+                {isTicketmaster ? (
+                  <a
+                    href={ticketmasterUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="join-button ticketmaster-link"
+                  >
+                    View tickets
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    className="join-button"
+                    onClick={() => onJoin(event.id)}
+                    disabled={alreadyJoined || joining}
+                  >
+                    {alreadyJoined ? 'You joined' : joining ? 'Joining…' : 'Join event'}
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="join-button"
-                  onClick={() => onJoin(event.id)}
-                  disabled={alreadyJoined || joining}
+                  className="secondary-button"
+                  onClick={() => onShowDetails?.(event.id)}
                 >
-                  {alreadyJoined ? 'You joined' : joining ? 'Joining…' : 'Join event'}
+                  More
                 </button>
-              )}
+              </div>
             </li>
           );
         })}
