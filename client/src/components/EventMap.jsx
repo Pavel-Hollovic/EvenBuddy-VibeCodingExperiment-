@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { divIcon } from 'leaflet';
+import { divIcon, Icon } from 'leaflet';
 
 const DEFAULT_POSITION = [40.7128, -74.006];
 const USER_LOCATION_ZOOM = 13;
@@ -12,6 +12,8 @@ const userEventMarkerIcon = divIcon({
   iconAnchor: [12, 24],
   popupAnchor: [0, -28]
 });
+
+const ticketmasterMarkerIcon = new Icon.Default();
 
 function MapClickHandler({ onMapClick }) {
   useMapEvents({
@@ -39,7 +41,7 @@ function EventMarker({ event, isSelected, onSelectEvent, onJoin, joining, alread
   return (
     <Marker
       position={[event.location.lat, event.location.lng]}
-      icon={isTicketmaster ? undefined : userEventMarkerIcon}
+      icon={isTicketmaster ? ticketmasterMarkerIcon : userEventMarkerIcon}
       eventHandlers={{ click: () => onSelectEvent(event.id) }}
     >
       <Popup ref={popupRef} className="event-popup">
