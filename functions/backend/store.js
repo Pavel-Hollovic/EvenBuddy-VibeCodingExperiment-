@@ -48,6 +48,16 @@ export async function registerProfile({ name, email, password }) {
 
   const existingDoc = await findProfileDocByEmail(normalizedEmail);
   if (existingDoc) {
+    const data = existingDoc.data();
+    if (!data.passwordHash) {
+      await existingDoc.ref.update({
+        name: trimmedName,
+        passwordHash,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      const updated = await existingDoc.ref.get();
+      return sanitizeProfile(updated);
+    }
     const error = new Error('email_already_registered');
     error.code = 'email_exists';
     throw error;
@@ -91,6 +101,16 @@ export async function authenticateProfile({ email, password }) {
 export async function ensureProfile({ name, email, password }) {
   const existingDoc = await findProfileDocByEmail(email);
   if (existingDoc) {
+    const data = existingDoc.data();
+    if (!data.passwordHash && password) {
+      await existingDoc.ref.update({
+        name: name.trim(),
+        passwordHash: await bcrypt.hash(password, PASSWORD_SALT_ROUNDS),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      const updated = await existingDoc.ref.get();
+      return sanitizeProfile(updated);
+    }
     return sanitizeProfile(existingDoc);
   }
   return registerProfile({ name, email, password });
