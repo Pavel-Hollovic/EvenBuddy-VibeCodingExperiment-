@@ -1,7 +1,7 @@
 :root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #0f172a;
-  background-color: #f2f4f8;
+  color: #341645;
+  background: linear-gradient(180deg, #fef6ff 0%, #f3f0ff 100%);
   line-height: 1.6;
 }
 
@@ -11,7 +11,8 @@
 
 body {
   margin: 0;
-  background: #f2f4f8;
+  background: linear-gradient(180deg, #fef6ff 0%, #f3f0ff 100%);
+  min-height: 100vh;
 }
 
 #root {
@@ -20,11 +21,16 @@ body {
 
 .app {
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 32px auto 48px;
   padding: 32px 24px 48px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 28px;
+  border: 1px solid rgba(193, 126, 247, 0.18);
+  box-shadow: rgba(123, 97, 255, 0.12) 0 30px 50px -25px;
+  backdrop-filter: blur(8px);
 }
 
 header {
@@ -32,6 +38,11 @@ header {
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
+  padding: 24px 28px;
+  border-radius: 20px;
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.92), rgba(242, 229, 255, 0.9));
+  border: 1px solid rgba(210, 153, 255, 0.32);
+  box-shadow: rgba(195, 122, 250, 0.16) 0 18px 30px -20px;
 }
 
 .header-actions {
@@ -43,48 +54,50 @@ header {
 
 .branding h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 34px;
   letter-spacing: -0.02em;
+  color: #3b1861;
 }
 
 .branding .tagline {
   display: block;
-  color: #475569;
+  color: #6b4a7d;
   font-size: 14px;
+  margin-top: 4px;
 }
 
 .hero-copy {
   margin: 0;
   max-width: 420px;
-  color: #1e293b;
+  color: #3e235c;
   font-size: 18px;
 }
 
 .sign-out-button {
-  background: #f8fafc;
-  color: #1e293b;
-  border: 1px solid #cbd5f5;
-  padding: 8px 16px;
+  background: transparent;
+  color: #5b2d82;
+  border: 1px solid rgba(157, 120, 255, 0.45);
+  padding: 10px 20px;
   box-shadow: none;
 }
 
 .sign-out-button:hover {
-  background: #e2e8f0;
+  background: rgba(241, 228, 255, 0.9);
   box-shadow: none;
-  transform: none;
+  transform: translateY(-1px);
 }
 
 .sign-out-button:focus {
-  outline: 2px solid #6366f1;
+  outline: 2px solid #d946ef;
   outline-offset: 2px;
 }
 
 .alert {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
-  border-radius: 12px;
-  padding: 12px 16px;
+  background: rgba(254, 226, 255, 0.85);
+  color: #a21caf;
+  border: 1px solid rgba(251, 207, 232, 0.9);
+  border-radius: 14px;
+  padding: 14px 18px;
   font-size: 15px;
 }
 
@@ -102,10 +115,11 @@ main {
 }
 
 .card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: rgba(15, 23, 42, 0.08) 0 10px 30px -12px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(248, 236, 255, 0.92));
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: rgba(120, 69, 190, 0.12) 0 26px 48px -22px;
+  border: 1px solid rgba(210, 153, 255, 0.25);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -117,21 +131,24 @@ main {
 .event-list h3 {
   margin: 0;
   font-size: 18px;
+  color: #3b1861;
 }
 
 .profile-name {
   margin: 0;
   font-weight: 600;
   font-size: 20px;
+  color: #43176b;
 }
 
 .profile-email {
   font-size: 13px;
   word-break: break-all;
+  color: #7d4c9d;
 }
 
 .muted {
-  color: #64748b;
+  color: #7f6695;
   font-size: 14px;
 }
 
@@ -147,57 +164,60 @@ label {
   flex-direction: column;
   font-size: 14px;
   gap: 4px;
-  color: #1e293b;
+  color: #3b1c63;
 }
 
 input[type='text'],
 input[type='datetime-local'],
 select {
-  border: 1px solid #cbd5f5;
-  border-radius: 10px;
+  border: 1px solid rgba(210, 153, 255, 0.45);
+  border-radius: 12px;
   padding: 10px 12px;
   font-size: 15px;
   font-family: inherit;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 input:focus,
 select:focus {
-  outline: 2px solid #6366f1;
-  border-color: #6366f1;
+  outline: 2px solid rgba(234, 76, 137, 0.75);
+  border-color: rgba(217, 70, 239, 0.7);
+  box-shadow: rgba(172, 106, 253, 0.28) 0 0 0 4px;
 }
 
 button {
   border-radius: 999px;
   border: none;
-  padding: 10px 18px;
+  padding: 10px 20px;
   font-size: 15px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  color: #fff;
 }
 
 button:disabled {
-  background: #cbd5f5;
-  color: #475569;
+  background: linear-gradient(135deg, #f3d2ff, #f9d0ea);
+  color: #9f7fb8;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
 button:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: rgba(99, 102, 241, 0.35) 0 12px 20px -12px;
+  transform: translateY(-2px);
+  box-shadow: rgba(236, 72, 153, 0.35) 0 15px 28px -18px;
 }
 
 .form-error {
-  color: #b91c1c;
+  color: #be185d;
   font-size: 14px;
   margin: 0;
 }
+
 
 .filter-group {
   display: flex;
@@ -208,7 +228,7 @@ button:not(:disabled):hover {
 .filter-label {
   font-weight: 600;
   font-size: 14px;
-  color: #1e293b;
+  color: #45206d;
 }
 
 .filter-options {
@@ -221,15 +241,23 @@ button:not(:disabled):hover {
   display: flex;
   gap: 6px;
   align-items: center;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(210, 153, 255, 0.3);
+  background: rgba(248, 236, 255, 0.8);
   cursor: pointer;
   font-size: 13px;
+  color: #4c256f;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.checkbox:hover {
+  border-color: rgba(234, 76, 137, 0.45);
+  background: rgba(252, 232, 255, 0.92);
 }
 
 .checkbox input {
-  accent-color: #6366f1;
+  accent-color: #d946ef;
 }
 
 .filter-dates {
@@ -241,23 +269,25 @@ button:not(:disabled):hover {
 .location-preview {
   display: flex;
   justify-content: space-between;
-  background: #f8fafc;
+  background: rgba(247, 231, 255, 0.9);
   padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px dashed #cbd5f5;
+  border-radius: 12px;
+  border: 1px dashed rgba(210, 153, 255, 0.5);
   font-size: 14px;
+  color: #4f1d75;
 }
 
 .location-label {
   font-weight: 600;
-  color: #1e293b;
+  color: #4f1d75;
 }
 
 .map-wrapper {
   height: 420px;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: rgba(15, 23, 42, 0.08) 0 18px 40px -18px;
+  border: 1px solid rgba(210, 153, 255, 0.35);
+  box-shadow: rgba(120, 69, 190, 0.12) 0 24px 42px -24px;
 }
 
 .map {
@@ -283,17 +313,18 @@ button:not(:disabled):hover {
 
 .stack {
   text-align: left;
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 14px 16px;
+  background: rgba(248, 236, 255, 0.9);
+  border-radius: 16px;
+  padding: 16px 18px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
 .stack:hover {
-  border-color: #cbd5f5;
-  background: #eef2ff;
+  border-color: rgba(234, 76, 137, 0.35);
+  background: rgba(252, 232, 255, 0.95);
+  transform: translateY(-1px);
 }
 
 .event-header {
@@ -310,45 +341,46 @@ button:not(:disabled):hover {
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 12px;
-  color: #1e293b;
-  background: #e2e8f0;
+  color: #4a1d6f;
+  background: rgba(225, 192, 255, 0.7);
 }
 
 .pill-sport {
-  background: rgba(59, 130, 246, 0.15);
-  color: #2563eb;
+  background: rgba(139, 92, 246, 0.18);
+  color: #6d28d9;
 }
 
 .pill-culture {
-  background: rgba(14, 165, 233, 0.15);
-  color: #0ea5e9;
+  background: rgba(236, 72, 153, 0.18);
+  color: #db2777;
 }
 
 .pill-party {
-  background: rgba(244, 114, 182, 0.18);
-  color: #db2777;
+  background: rgba(244, 114, 182, 0.24);
+  color: #be185d;
 }
 
 .attendees {
   font-size: 13px;
+  color: #734585;
 }
 
 .join-button {
-  background: #0ea5e9;
+  background: linear-gradient(135deg, #a855f7, #f472b6);
 }
 
 .join-button:disabled {
-  background: #bae6fd;
-  color: #0c4a6e;
+  background: linear-gradient(135deg, #f0d9ff, #fdd7f0);
+  color: #9d7dbd;
 }
 
 .loading {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: rgba(248, 236, 255, 0.9);
+  border: 1px solid rgba(210, 153, 255, 0.3);
+  border-radius: 14px;
   padding: 12px 16px;
   font-size: 14px;
-  color: #475569;
+  color: #68407f;
 }
 
 .profile-card,
@@ -368,12 +400,21 @@ button:not(:disabled):hover {
 
 @media (max-width: 640px) {
   .app {
+    margin: 16px;
     padding: 24px 16px 40px;
+    border-radius: 24px;
   }
 
   header {
     flex-direction: column;
     align-items: flex-start;
+    padding: 20px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .hero-copy {

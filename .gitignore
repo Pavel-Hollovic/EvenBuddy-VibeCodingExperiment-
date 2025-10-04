@@ -5,3 +5,4 @@ server/dist/
 .env
 
 .firebase/
+functions/node_modules/

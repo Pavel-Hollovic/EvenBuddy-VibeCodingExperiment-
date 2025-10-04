@@ -1,1 +1,1 @@
-export const CATEGORIES = ['Sport', 'Culture', 'Party'];
+export { CATEGORIES } from '../../functions/backend/constants.js';
