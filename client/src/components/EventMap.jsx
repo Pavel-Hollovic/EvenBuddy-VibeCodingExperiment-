@@ -4,15 +4,100 @@ import { divIcon, Icon } from 'leaflet';
 
 const DEFAULT_POSITION = [40.7128, -74.006];
 const USER_LOCATION_ZOOM = 13;
+const MARKER_ICON_BASE = {
+  iconSize: [30, 41],
+  iconAnchor: [15, 40],
+  popupAnchor: [0, -36]
+};
 
-const userEventMarkerIcon = divIcon({
-  className: 'user-event-marker',
-  html: '<span class="user-event-marker__icon"></span>',
-  iconSize: [24, 24],
-  iconAnchor: [12, 24],
-  popupAnchor: [0, -28]
-});
+const CATEGORY_GLYPHS = {
+  sport: '🏅',
+  sports: '🏅',
+  culture: '🎭',
+  party: '🎉',
+  music: '🎵',
+  concert: '🎵',
+  food: '🍽️',
+  dining: '🍽️',
+  fitness: '💪',
+  health: '💪',
+  art: '🎨',
+  arts: '🎨',
+  networking: '🤝',
+  community: '🤝',
+  education: '📚',
+  learning: '📚'
+};
 
+const markerIconCache = new Map();
+const userEventMarkerIconCache = new Map();
+
+function escapeHtml(value = '') {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function normalizeCategory(category) {
+  if (!category) {
+    return '';
+  }
+  return String(category).trim().toLowerCase();
+}
+
+function getCategoryGlyph(category) {
+  const key = normalizeCategory(category);
+  if (!key) {
+    return '★';
+  }
+  if (CATEGORY_GLYPHS[key]) {
+    return CATEGORY_GLYPHS[key];
+  }
+  const wordCandidates = key
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(' ')
+    .filter(Boolean);
+  for (const word of wordCandidates) {
+    if (CATEGORY_GLYPHS[word]) {
+      return CATEGORY_GLYPHS[word];
+    }
+  }
+  for (const candidate of Object.keys(CATEGORY_GLYPHS)) {
+    if (key.includes(candidate)) {
+      return CATEGORY_GLYPHS[candidate];
+    }
+  }
+  return key[0] ? key[0].toUpperCase() : '★';
+}
+
+function createMarkerIcon({ glyph, variant }) {
+  const cacheKey = `${variant}::${glyph}`;
+  if (markerIconCache.has(cacheKey)) {
+    return markerIconCache.get(cacheKey);
+  }
+
+  const icon = divIcon({
+    className: `custom-marker custom-marker--${variant}`,
+    html: `<span class="custom-marker__pin"><span class="custom-marker__glyph">${escapeHtml(glyph)}</span></span>`,
+    ...MARKER_ICON_BASE
+  });
+
+  markerIconCache.set(cacheKey, icon);
+  return icon;
+}
+
+function getUserEventMarkerIcon(category) {
+  const glyph = getCategoryGlyph(category);
+  if (!userEventMarkerIconCache.has(glyph)) {
+    userEventMarkerIconCache.set(glyph, createMarkerIcon({ glyph, variant: 'user' }));
+  }
+  return userEventMarkerIconCache.get(glyph);
+}
+
+const draftEventMarkerIcon = createMarkerIcon({ glyph: '+', variant: 'draft' });
 const ticketmasterMarkerIcon = new Icon.Default();
 
 function MapClickHandler({ onMapClick }) {
@@ -30,6 +115,7 @@ function EventMarker({ event, isSelected, onSelectEvent, onJoin, joining, alread
   const isTicketmaster = event.source === 'ticketmaster';
   const ticketmasterUrl = event.externalUrl || 'https://www.ticketmaster.com/';
   const attendees = Array.isArray(event.attendees) ? event.attendees : [];
+  const markerIcon = isTicketmaster ? ticketmasterMarkerIcon : getUserEventMarkerIcon(event.category);
 
   useEffect(() => {
     if (isSelected && popupRef.current) {
@@ -41,7 +127,7 @@ function EventMarker({ event, isSelected, onSelectEvent, onJoin, joining, alread
   return (
     <Marker
       position={[event.location.lat, event.location.lng]}
-      icon={isTicketmaster ? ticketmasterMarkerIcon : userEventMarkerIcon}
+      icon={markerIcon}
       eventHandlers={{ click: () => onSelectEvent(event.id) }}
     >
       <Popup ref={popupRef} className="event-popup">
@@ -92,7 +178,6 @@ export default function EventMap({
 }) {
   const [mapInstance, setMapInstance] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
-  const autoLocateAttemptedRef = useRef(false);
   const locatingRef = useRef(false);
 
   const locateUser = useCallback(
@@ -138,12 +223,32 @@ export default function EventMap({
   );
 
   useEffect(() => {
-    if (!mapInstance || autoLocateAttemptedRef.current) {
+    if (!mapInstance || typeof navigator === 'undefined' || !navigator.geolocation) {
       return;
     }
 
-    autoLocateAttemptedRef.current = true;
-    locateUser({ silent: true });
+    const permissions = navigator.permissions;
+    if (!permissions?.query) {
+      return;
+    }
+
+    let cancelled = false;
+
+    permissions
+      .query({ name: 'geolocation' })
+      .then((status) => {
+        if (cancelled || status.state !== 'granted') {
+          return;
+        }
+        locateUser({ silent: true });
+      })
+      .catch(() => {
+        // ignore permission check failures, user can still use the manual button
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [locateUser, mapInstance]);
 
   return (
@@ -160,21 +265,24 @@ export default function EventMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapClickHandler onMapClick={onMapClick} />
-        {events.map((event) => (
-          <EventMarker
-            key={event.id}
-            event={event}
-            isSelected={event.id === selectedEventId}
-            onSelectEvent={onSelectEvent}
-            onJoin={onJoin}
-            joining={joiningIds.has(event.id)}
-            alreadyJoined={event.attendees.includes(currentUserId)}
-          />
-        ))}
+        {events.map((event) => {
+          const attendees = Array.isArray(event.attendees) ? event.attendees : [];
+          return (
+            <EventMarker
+              key={event.id}
+              event={event}
+              isSelected={event.id === selectedEventId}
+              onSelectEvent={onSelectEvent}
+              onJoin={onJoin}
+              joining={joiningIds.has(event.id)}
+              alreadyJoined={currentUserId ? attendees.includes(currentUserId) : false}
+            />
+          );
+        })}
         {newEventLocation && (
           <Marker
             position={[newEventLocation.lat, newEventLocation.lng]}
-            icon={userEventMarkerIcon}
+            icon={draftEventMarkerIcon}
           >
             <Popup>New event location</Popup>
           </Marker>
