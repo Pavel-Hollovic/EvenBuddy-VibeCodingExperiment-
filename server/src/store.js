@@ -7,5 +7,7 @@ export {
   listEvents,
   joinEvent,
   getProfile,
-  getEvent
+  getEvent,
+  listEventMessages,
+  createEventMessage
 } from '../../functions/backend/store.js';

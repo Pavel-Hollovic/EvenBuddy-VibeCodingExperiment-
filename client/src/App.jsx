@@ -4,6 +4,7 @@ import FilterBar from './components/FilterBar.jsx';
 import EventForm from './components/EventForm.jsx';
 import EventList from './components/EventList.jsx';
 import EventMap from './components/EventMap.jsx';
+import EventDiscussion from './components/EventDiscussion.jsx';
 import {
   registerProfile as apiRegisterProfile,
   login as apiLogin,
@@ -211,6 +212,12 @@ export default function App() {
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (selectedEventId && !events.some((event) => event.id === selectedEventId)) {
+      setSelectedEventId(null);
+    }
+  }, [events, selectedEventId]);
+
   const handleAuth = useCallback(async ({ mode, name, email, password }) => {
     setCreatingProfile(true);
     setErrorMessage('');
@@ -350,6 +357,11 @@ export default function App() {
     setLoadingEvents(false);
   }, []);
 
+  const selectedEvent = useMemo(
+    () => events.find((event) => event.id === selectedEventId) || null,
+    [events, selectedEventId]
+  );
+
   return (
     <div className="app">
       <header>
@@ -416,6 +428,13 @@ export default function App() {
               joiningIds={joiningIds}
               onSelectEvent={setSelectedEventId}
             />
+            {selectedEvent && (
+              <EventDiscussion
+                event={selectedEvent}
+                currentUserId={profile.id}
+                currentUserName={profile.name}
+              />
+            )}
           </main>
         </div>
       )}

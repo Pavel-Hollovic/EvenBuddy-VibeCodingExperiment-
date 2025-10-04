@@ -86,3 +86,23 @@ export async function joinEvent(eventId, userId) {
   });
   return handleResponse(res);
 }
+
+export async function fetchEventMessages(eventId) {
+  if (!eventId) {
+    throw new Error('eventId is required');
+  }
+  const res = await fetch(buildUrl(`/api/events/${eventId}/messages`));
+  return handleResponse(res);
+}
+
+export async function createEventMessage(eventId, { userId, content }) {
+  if (!eventId) {
+    throw new Error('eventId is required');
+  }
+  const res = await fetch(buildUrl(`/api/events/${eventId}/messages`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, content })
+  });
+  return handleResponse(res);
+}

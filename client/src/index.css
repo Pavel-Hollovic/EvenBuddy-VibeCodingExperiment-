@@ -476,6 +476,104 @@ button:not(:disabled):hover {
   gap: 12px;
 }
 
+.event-discussion {
+  gap: 18px;
+}
+
+.event-discussion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.posting-as {
+  font-size: 13px;
+}
+
+.message-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.message-item {
+  background: rgba(248, 236, 255, 0.78);
+  border: 1px solid rgba(210, 153, 255, 0.28);
+  border-radius: 16px;
+  padding: 12px 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.message-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.message-author {
+  color: #3b1861;
+  font-size: 14px;
+}
+
+.message-timestamp {
+  color: #7f6695;
+  font-size: 12px;
+}
+
+.message-content {
+  margin: 0;
+  color: #341645;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message-input {
+  border: 1px solid rgba(210, 153, 255, 0.45);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.95);
+  resize: vertical;
+  min-height: 96px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.message-input:focus {
+  outline: 2px solid rgba(234, 76, 137, 0.75);
+  border-color: rgba(217, 70, 239, 0.7);
+  box-shadow: rgba(172, 106, 253, 0.28) 0 0 0 4px;
+}
+
+.message-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.remaining-characters {
+  font-size: 12px;
+}
+
 @media (max-width: 960px) {
   .dashboard {
     grid-template-columns: 1fr;

@@ -1,11 +1,13 @@
 import { v4 as uuid } from 'uuid';
 import dayjs from 'dayjs';
 import bcrypt from 'bcryptjs';
-import { admin, db } from './firebaseAdmin.js';
+import { admin, db, realtimeDb } from './firebaseAdmin.js';
 
 const PASSWORD_SALT_ROUNDS = Number(process.env.PASSWORD_SALT_ROUNDS || 12);
+const MAX_MESSAGE_LENGTH = Number(process.env.EVENT_MESSAGE_MAX_LENGTH || 500);
 const profilesCollection = db.collection('profiles');
 const eventsCollection = db.collection('Events');
+const messagesRootRef = realtimeDb.ref('messages');
 
 function sanitizeProfile(doc) {
   if (!doc.exists) return null;
@@ -32,6 +34,24 @@ function toEvent(doc) {
     externalId: data.externalId || null,
     externalUrl: data.externalUrl || null,
     venueName: data.venueName || null
+  };
+}
+
+function sanitizeMessage(snapshot) {
+  if (!snapshot.exists()) {
+    return null;
+  }
+  const data = snapshot.val();
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+  return {
+    id: data.id || snapshot.key,
+    eventId: data.eventId,
+    userId: data.userId,
+    userName: data.userName || null,
+    content: data.content || '',
+    createdAt: data.createdAt || null
   };
 }
 
@@ -227,6 +247,67 @@ export async function joinEvent({ eventId, userId }) {
 
     return { event: { ...toEvent(eventSnap), attendees: Array.from(attendees) } };
   });
+}
+
+export async function listEventMessages({ eventId, limit = 100 } = {}) {
+  const eventMessagesRef = messagesRootRef.child(eventId);
+  const snapshot = await eventMessagesRef.orderByChild('createdAt').limitToLast(limit).get();
+  if (!snapshot.exists()) {
+    return [];
+  }
+
+  const messages = [];
+  snapshot.forEach((child) => {
+    const message = sanitizeMessage(child);
+    if (message) {
+      messages.push(message);
+    }
+  });
+
+  return messages.sort((a, b) => {
+    const aTime = typeof a.createdAt === 'number' ? a.createdAt : 0;
+    const bTime = typeof b.createdAt === 'number' ? b.createdAt : 0;
+    return aTime - bTime;
+  });
+}
+
+export async function createEventMessage({ eventId, userId, content }) {
+  const normalizedContent = typeof content === 'string' ? content.trim() : '';
+  if (!normalizedContent) {
+    return { error: 'message_required' };
+  }
+  if (normalizedContent.length > MAX_MESSAGE_LENGTH) {
+    return { error: 'message_too_long', maxLength: MAX_MESSAGE_LENGTH };
+  }
+
+  const [event, profile] = await Promise.all([getEvent(eventId), getProfile(userId)]);
+  if (!event) {
+    return { error: 'event_not_found' };
+  }
+  if (!profile) {
+    return { error: 'profile_not_found' };
+  }
+
+  const eventMessagesRef = messagesRootRef.child(eventId);
+  const messageRef = eventMessagesRef.push();
+  const payload = {
+    id: messageRef.key,
+    eventId,
+    userId,
+    userName: profile.name,
+    content: normalizedContent,
+    createdAt: admin.database.ServerValue.TIMESTAMP
+  };
+
+  await messageRef.set(payload);
+  const storedSnapshot = await messageRef.get();
+  const message = sanitizeMessage(storedSnapshot);
+
+  if (!message) {
+    return { error: 'message_not_stored' };
+  }
+
+  return { message };
 }
 
 export async function upsertTicketmasterEvents(events) {

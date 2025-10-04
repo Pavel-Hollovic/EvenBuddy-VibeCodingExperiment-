@@ -11,7 +11,9 @@ import {
   listEvents,
   joinEvent,
   getProfile,
-  getEvent
+  getEvent,
+  listEventMessages,
+  createEventMessage
 } from './store.js';
 import { seedInitialData } from './seed.js';
 import { syncTicketmasterEvents } from './ticketmaster.js';
@@ -123,6 +125,15 @@ export function createApp() {
 
   const joinSchema = z.object({
     userId: z.string().uuid('userId must be a valid UUID')
+  });
+
+  const messageSchema = z.object({
+    userId: z.string().uuid('userId must be a valid UUID'),
+    content: z
+      .string()
+      .trim()
+      .min(1, 'Message cannot be empty')
+      .max(500, 'Message must be 500 characters or fewer')
   });
 
   const querySchema = z.object({
@@ -303,6 +314,54 @@ export function createApp() {
       }
 
       res.json(result.event);
+    })
+  );
+
+  app.get(
+    '/api/events/:eventId/messages',
+    asyncHandler(async (req, res) => {
+      const { eventId } = req.params;
+      const event = await getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ error: 'event_not_found' });
+      }
+
+      const messages = await listEventMessages({ eventId });
+      res.json({ messages });
+    })
+  );
+
+  app.post(
+    '/api/events/:eventId/messages',
+    asyncHandler(async (req, res) => {
+      const validation = messageSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: 'validation_error', details: validation.error.issues });
+      }
+
+      const { eventId } = req.params;
+      const { userId, content } = validation.data;
+      const result = await createEventMessage({ eventId, userId, content });
+
+      if (result.error === 'event_not_found') {
+        return res.status(404).json({ error: result.error });
+      }
+      if (result.error === 'profile_not_found') {
+        return res.status(404).json({ error: result.error });
+      }
+      if (result.error === 'message_required') {
+        return res.status(400).json({ error: result.error });
+      }
+      if (result.error === 'message_too_long') {
+        return res
+          .status(400)
+          .json({ error: result.error, maxLength: result.maxLength || 500 });
+      }
+      if (result.error) {
+        return res.status(500).json({ error: result.error });
+      }
+
+      res.status(201).json({ message: result.message });
     })
   );
 
