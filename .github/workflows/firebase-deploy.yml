@@ -1,0 +1,40 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Build client
+        run: npm run build
+        working-directory: client
+
+      - name: Install functions dependencies
+        run: npm ci
+        working-directory: functions
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Deploy to Firebase Hosting and Functions
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx firebase-tools@12.9.0 deploy --only functions,hosting --project eventbuddy-2260c --non-interactive
