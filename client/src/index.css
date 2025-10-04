@@ -331,6 +331,37 @@ button:not(:disabled):hover {
   width: 100%;
 }
 
+.user-event-marker {
+  background: transparent;
+  border: none;
+}
+
+.user-event-marker__icon {
+  position: relative;
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #c77dff 0%, #7b2cbf 100%);
+  border: 2px solid #fff;
+  box-shadow: rgba(67, 20, 87, 0.32) 0 8px 16px -6px;
+}
+
+.user-event-marker__icon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(180deg, #c77dff 0%, #7b2cbf 100%);
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  border-bottom-right-radius: 4px;
+  transform: translate(-50%, 50%) rotate(45deg);
+  box-shadow: rgba(67, 20, 87, 0.22) 0 6px 12px -6px;
+}
+
 .locate-button {
   position: absolute;
   bottom: 16px;
