@@ -1,9 +1,11 @@
 export {
-  upsertProfile,
+  registerProfile,
+  authenticateProfile,
+  ensureProfile,
+  updateProfileName,
   createEvent,
   listEvents,
   joinEvent,
   getProfile,
-  getEvent,
-  getProfileByEmail
+  getEvent
 } from '../../functions/backend/store.js';

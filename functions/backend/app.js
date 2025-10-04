@@ -4,13 +4,14 @@ import dayjs from 'dayjs';
 import { z } from 'zod';
 import { CATEGORIES } from './constants.js';
 import {
-  upsertProfile,
+  registerProfile,
+  authenticateProfile,
+  updateProfileName,
   createEvent,
   listEvents,
   joinEvent,
   getProfile,
-  getEvent,
-  getProfileByEmail
+  getEvent
 } from './store.js';
 import { seedInitialData } from './seed.js';
 
@@ -43,17 +44,36 @@ export function createApp() {
     promise.then(() => next()).catch(next);
   });
 
-  const profileSchema = z.object({
-    name: z
-      .string()
-      .min(1, 'Name is required')
-      .max(80, 'Name must be 80 characters or fewer')
-      .transform((val) => val.trim())
-      .refine((val) => val.length > 0, 'Name cannot be empty'),
-    email: z
-      .string()
-      .email('Email must be a valid address')
-      .transform((val) => val.trim().toLowerCase())
+  const nameSchema = z
+    .string()
+    .min(1, 'Name is required')
+    .max(80, 'Name must be 80 characters or fewer')
+    .transform((val) => val.trim())
+    .refine((val) => val.length > 0, 'Name cannot be empty');
+
+  const emailSchema = z
+    .string()
+    .email('Email must be a valid address')
+    .transform((val) => val.trim().toLowerCase());
+
+  const passwordSchema = z
+    .string()
+    .min(8, 'Password must be at least 8 characters long')
+    .max(128, 'Password must be 128 characters or fewer');
+
+  const registerSchema = z.object({
+    name: nameSchema,
+    email: emailSchema,
+    password: passwordSchema
+  });
+
+  const loginSchema = z.object({
+    email: emailSchema,
+    password: passwordSchema
+  });
+
+  const profileUpdateSchema = z.object({
+    name: nameSchema.optional()
   });
 
   const eventSchema = z.object({
@@ -93,16 +113,65 @@ export function createApp() {
   });
 
   app.post(
-    '/api/profiles',
+    '/api/auth/register',
     asyncHandler(async (req, res) => {
-      const result = profileSchema.safeParse(req.body);
+      const result = registerSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: 'validation_error', details: result.error.issues });
       }
 
-      const { name, email } = result.data;
-      const { profile, existed } = await upsertProfile({ name, email });
-      return res.status(existed ? 200 : 201).json(profile);
+      const { name, email, password } = result.data;
+      try {
+        const profile = await registerProfile({ name, email, password });
+        res.status(201).json(profile);
+      } catch (error) {
+        if (error.code === 'email_exists') {
+          return res.status(409).json({ error: 'email_already_registered' });
+        }
+        throw error;
+      }
+    })
+  );
+
+  app.post(
+    '/api/auth/login',
+    asyncHandler(async (req, res) => {
+      const result = loginSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: 'validation_error', details: result.error.issues });
+      }
+
+      const { email, password } = result.data;
+      try {
+        const profile = await authenticateProfile({ email, password });
+        res.json(profile);
+      } catch (error) {
+        if (error.code === 'invalid_credentials') {
+          return res.status(401).json({ error: 'invalid_credentials' });
+        }
+        throw error;
+      }
+    })
+  );
+
+  app.patch(
+    '/api/profiles/:profileId',
+    asyncHandler(async (req, res) => {
+      const result = profileUpdateSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: 'validation_error', details: result.error.issues });
+      }
+
+      const { name } = result.data;
+      if (!name) {
+        return res.status(400).json({ error: 'nothing_to_update' });
+      }
+
+      const updated = await updateProfileName({ profileId: req.params.profileId, name });
+      if (!updated) {
+        return res.status(404).json({ error: 'profile_not_found' });
+      }
+      res.json(updated);
     })
   );
 

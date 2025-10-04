@@ -1,9 +1,10 @@
 import dayjs from 'dayjs';
 import { CATEGORIES } from './constants.js';
 import { db } from './firebaseAdmin.js';
-import { upsertProfile, createEvent } from './store.js';
+import { ensureProfile, createEvent } from './store.js';
 
 let seedPromise = null;
+const SEED_PASSWORD = process.env.SEED_PROFILE_PASSWORD || 'password123!';
 
 export function seedInitialData() {
   if (seedPromise) {
@@ -11,14 +12,14 @@ export function seedInitialData() {
   }
 
   seedPromise = (async () => {
-    const existing = await db.collection('Events').limit(1).get();
-    if (!existing.empty) {
+    const anyEvent = await db.collection('Events').limit(1).get();
+    if (!anyEvent.empty) {
       return;
     }
 
-    const { profile: alice } = await upsertProfile({ name: 'Alice Explorer', email: 'alice@example.com' });
-    const { profile: ben } = await upsertProfile({ name: 'Ben Musician', email: 'ben@example.com' });
-    const { profile: carla } = await upsertProfile({ name: 'Carla Runner', email: 'carla@example.com' });
+    const alice = await ensureProfile({ name: 'Alice Explorer', email: 'alice@example.com', password: SEED_PASSWORD });
+    const ben = await ensureProfile({ name: 'Ben Musician', email: 'ben@example.com', password: SEED_PASSWORD });
+    const carla = await ensureProfile({ name: 'Carla Runner', email: 'carla@example.com', password: SEED_PASSWORD });
 
     await Promise.all([
       createEvent({

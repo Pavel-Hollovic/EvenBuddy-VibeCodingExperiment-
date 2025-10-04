@@ -5,7 +5,8 @@ import EventForm from './components/EventForm.jsx';
 import EventList from './components/EventList.jsx';
 import EventMap from './components/EventMap.jsx';
 import {
-  createProfile as apiCreateProfile,
+  registerProfile as apiRegisterProfile,
+  login as apiLogin,
   fetchCategories,
   fetchEvents,
   createEvent as apiCreateEvent,
@@ -14,6 +15,96 @@ import {
 
 const LOCAL_STORAGE_KEY = 'eventBuddyProfile';
 const EMPTY_DATE_RANGE = { start: '', end: '' };
+
+const TIME_FILTERS = [
+  { value: 'tonight', label: 'Tonight' },
+  { value: 'tomorrow', label: 'Tomorrow' },
+  { value: 'weekend', label: 'This Weekend' }
+];
+
+function toLocalInputValue(date) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return [
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    `${pad(date.getHours())}:${pad(date.getMinutes())}`
+  ].join('T');
+}
+
+function startOfDay(date) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function endOfDay(date) {
+  const copy = new Date(date);
+  copy.setHours(23, 59, 0, 0);
+  return copy;
+}
+
+function getDateRangeForPreset(preset, reference = new Date()) {
+  const now = new Date(reference);
+  now.setSeconds(0, 0);
+
+  if (preset === 'tonight') {
+    const eveningStart = new Date(now);
+    eveningStart.setHours(18, 0, 0, 0);
+    const startDate = now < eveningStart ? eveningStart : new Date(now);
+    const endDate = endOfDay(now);
+    if (startDate > endDate) {
+      const tomorrowEvening = new Date(now);
+      tomorrowEvening.setDate(now.getDate() + 1);
+      tomorrowEvening.setHours(18, 0, 0, 0);
+      const tomorrowEnd = endOfDay(tomorrowEvening);
+      return {
+        start: toLocalInputValue(tomorrowEvening),
+        end: toLocalInputValue(tomorrowEnd)
+      };
+    }
+
+    return {
+      start: toLocalInputValue(startDate),
+      end: toLocalInputValue(endDate)
+    };
+  }
+
+  if (preset === 'tomorrow') {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    const startDate = startOfDay(tomorrow);
+    const endDate = endOfDay(tomorrow);
+    return {
+      start: toLocalInputValue(startDate),
+      end: toLocalInputValue(endDate)
+    };
+  }
+
+  if (preset === 'weekend') {
+    const day = now.getDay();
+    const saturday = new Date(now);
+
+    if (day === 6) {
+      saturday.setHours(0, 0, 0, 0);
+    } else if (day === 0) {
+      saturday.setDate(now.getDate() - 1);
+      saturday.setHours(0, 0, 0, 0);
+    } else {
+      const daysUntilSaturday = 6 - day;
+      saturday.setDate(now.getDate() + daysUntilSaturday);
+      saturday.setHours(0, 0, 0, 0);
+    }
+
+    const sunday = new Date(saturday);
+    sunday.setDate(saturday.getDate() + 1);
+
+    return {
+      start: toLocalInputValue(startOfDay(saturday)),
+      end: toLocalInputValue(endOfDay(sunday))
+    };
+  }
+
+  return { ...EMPTY_DATE_RANGE };
+}
 
 function loadStoredProfile() {
   if (typeof window === 'undefined') return null;
@@ -60,6 +151,7 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(new Set());
   const [dateRange, setDateRange] = useState(EMPTY_DATE_RANGE);
+  const [selectedTimeFilter, setSelectedTimeFilter] = useState(null);
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [creatingProfile, setCreatingProfile] = useState(false);
@@ -119,15 +211,27 @@ export default function App() {
     }
   }, [profile]);
 
-  const handleCreateProfile = useCallback(async ({ name, email }) => {
+  const handleAuth = useCallback(async ({ mode, name, email, password }) => {
     setCreatingProfile(true);
     setErrorMessage('');
     try {
-      const created = await apiCreateProfile({ name, email });
-      setProfile(created);
+      const profile =
+        mode === 'register'
+          ? await apiRegisterProfile({ name, email, password })
+          : await apiLogin({ email, password });
+      setProfile(profile);
     } catch (error) {
-      console.error('Profile creation failed', error);
-      setErrorMessage('We could not create your profile. Please try again.');
+      console.error('Authentication failed', error);
+      const message = error?.message || '';
+      if (message === 'email_already_registered') {
+        setErrorMessage('An account with that email already exists. Try signing in instead.');
+      } else if (message === 'invalid_credentials') {
+        setErrorMessage('We could not sign you in. Check your email and password.');
+      } else if (message === 'validation_error') {
+        setErrorMessage('Please double-check the information you entered.');
+      } else {
+        setErrorMessage('We could not process your request. Please try again.');
+      }
     } finally {
       setCreatingProfile(false);
     }
@@ -144,6 +248,20 @@ export default function App() {
       return next;
     });
   };
+
+  const handleSelectTimeFilter = useCallback((filterValue) => {
+    setSelectedTimeFilter((prev) => {
+      const next = prev === filterValue ? null : filterValue;
+      const range = next ? getDateRangeForPreset(next) : { ...EMPTY_DATE_RANGE };
+      setDateRange(range);
+      return next;
+    });
+  }, []);
+
+  const handleChangeDateRange = useCallback((nextRange) => {
+    setSelectedTimeFilter(null);
+    setDateRange(nextRange);
+  }, []);
 
   const handleCreateEvent = useCallback(
     async ({ name, category, dateTime, location }) => {
@@ -222,6 +340,7 @@ export default function App() {
     setEvents([]);
     setSelectedCategories(new Set());
     setDateRange({ ...EMPTY_DATE_RANGE });
+    setSelectedTimeFilter(null);
     setNewEventLocation(null);
     setSelectedEventId(null);
     setJoiningIds(new Set());
@@ -251,7 +370,7 @@ export default function App() {
       {errorMessage && <div className="alert">{errorMessage}</div>}
 
       {!profile ? (
-        <ProfileSetup onCreateProfile={handleCreateProfile} loading={creatingProfile} />
+        <ProfileSetup onSubmit={handleAuth} loading={creatingProfile} />
       ) : (
         <div className="dashboard">
           <aside>
@@ -266,7 +385,10 @@ export default function App() {
               selectedCategories={selectedCategories}
               onToggleCategory={handleToggleCategory}
               dateRange={dateRange}
-              onChangeDateRange={setDateRange}
+              onChangeDateRange={handleChangeDateRange}
+              timeFilters={TIME_FILTERS}
+              onSelectTimeFilter={handleSelectTimeFilter}
+              selectedTimeFilter={selectedTimeFilter}
             />
             <EventForm
               categories={categories.length ? categories : ['Sport', 'Culture', 'Party']}

@@ -9,7 +9,10 @@ async function handleResponse(response) {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const errorBody = await response.json();
-      throw new Error(errorBody.error || 'Request failed');
+      const message = errorBody.error || errorBody.message || 'Request failed';
+      const error = new Error(message);
+      error.details = errorBody.details;
+      throw error;
     }
     throw new Error(`Request failed with status ${response.status}`);
   }
@@ -22,11 +25,29 @@ export async function fetchCategories() {
   return handleResponse(res);
 }
 
-export async function createProfile({ name, email }) {
-  const res = await fetch(buildUrl('/api/profiles'), {
+export async function registerProfile({ name, email, password }) {
+  const res = await fetch(buildUrl('/api/auth/register'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email })
+    body: JSON.stringify({ name, email, password })
+  });
+  return handleResponse(res);
+}
+
+export async function login({ email, password }) {
+  const res = await fetch(buildUrl('/api/auth/login'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  return handleResponse(res);
+}
+
+export async function updateProfile(profileId, updates) {
+  const res = await fetch(buildUrl(`/api/profiles/${profileId}`), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
   });
   return handleResponse(res);
 }
