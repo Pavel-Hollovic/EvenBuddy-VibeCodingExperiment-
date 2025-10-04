@@ -5,9 +5,9 @@ import { divIcon, Icon } from 'leaflet';
 const DEFAULT_POSITION = [40.7128, -74.006];
 const USER_LOCATION_ZOOM = 13;
 const MARKER_ICON_BASE = {
-  iconSize: [30, 41],
-  iconAnchor: [15, 40],
-  popupAnchor: [0, -36]
+  iconSize: [32, 48],
+  iconAnchor: [16, 44],
+  popupAnchor: [0, -40]
 };
 
 const CATEGORY_GLYPHS = {
@@ -80,8 +80,13 @@ function createMarkerIcon({ glyph, variant }) {
   }
 
   const icon = divIcon({
-    className: `custom-marker custom-marker--${variant}`,
-    html: `<span class="custom-marker__pin"><span class="custom-marker__glyph">${escapeHtml(glyph)}</span></span>`,
+    className: `marker-shell marker-shell--${variant}`,
+    html: [
+      '<svg class="marker-shell__svg" viewBox="0 0 32 48" role="presentation" focusable="false">',
+      '<path class="marker-shell__path" d="M16 2C9.383 2 4 7.383 4 14c0 9.63 12 30 12 30s12-20.37 12-30C28 7.383 22.617 2 16 2z" />',
+      '</svg>',
+      `<span class="marker-shell__glyph">${escapeHtml(glyph)}</span>`
+    ].join(''),
     ...MARKER_ICON_BASE
   });
 
@@ -118,10 +123,32 @@ function EventMarker({ event, isSelected, onSelectEvent, onJoin, joining, alread
   const markerIcon = isTicketmaster ? ticketmasterMarkerIcon : getUserEventMarkerIcon(event.category);
 
   useEffect(() => {
-    if (isSelected && popupRef.current) {
-      popupRef.current.openOn(map);
-      map.flyTo([event.location.lat, event.location.lng], map.getZoom(), { duration: 0.5 });
+    if (!isSelected || !popupRef.current) {
+      return;
     }
+
+    const popup = popupRef.current;
+    popup.openOn(map);
+    map.flyTo([event.location.lat, event.location.lng], map.getZoom(), { duration: 0.5 });
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const mapContainer = map.getContainer();
+
+    const scheduleScroll = typeof window.requestAnimationFrame === 'function'
+      ? window.requestAnimationFrame.bind(window)
+      : (fn) => window.setTimeout(fn, 0);
+
+    scheduleScroll(() => {
+      const popupElement = typeof popup.getElement === 'function' ? popup.getElement() : null;
+      const scrollTarget = popupElement || mapContainer;
+
+      if (scrollTarget && typeof scrollTarget.scrollIntoView === 'function') {
+        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
   }, [event.location.lat, event.location.lng, isSelected, map]);
 
   return (

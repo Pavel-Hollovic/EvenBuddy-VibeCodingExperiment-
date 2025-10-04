@@ -45,13 +45,20 @@ function sanitizeMessage(snapshot) {
   if (!data || typeof data !== 'object') {
     return null;
   }
+  let createdAt = null;
+  if (typeof data.createdAt === 'number') {
+    createdAt = data.createdAt;
+  } else if (typeof data.createdAt === 'string') {
+    const parsed = Number(data.createdAt);
+    createdAt = Number.isNaN(parsed) ? null : parsed;
+  }
   return {
     id: data.id || snapshot.key,
     eventId: data.eventId,
     userId: data.userId,
     userName: data.userName || null,
     content: data.content || '',
-    createdAt: data.createdAt || null
+    createdAt
   };
 }
 
@@ -251,7 +258,7 @@ export async function joinEvent({ eventId, userId }) {
 
 export async function listEventMessages({ eventId, limit = 100 } = {}) {
   const eventMessagesRef = messagesRootRef.child(eventId);
-  const snapshot = await eventMessagesRef.orderByChild('createdAt').limitToLast(limit).get();
+  const snapshot = await eventMessagesRef.get();
   if (!snapshot.exists()) {
     return [];
   }
@@ -264,11 +271,13 @@ export async function listEventMessages({ eventId, limit = 100 } = {}) {
     }
   });
 
-  return messages.sort((a, b) => {
-    const aTime = typeof a.createdAt === 'number' ? a.createdAt : 0;
-    const bTime = typeof b.createdAt === 'number' ? b.createdAt : 0;
-    return aTime - bTime;
-  });
+  return messages
+    .sort((a, b) => {
+      const aTime = typeof a.createdAt === 'number' ? a.createdAt : 0;
+      const bTime = typeof b.createdAt === 'number' ? b.createdAt : 0;
+      return aTime - bTime;
+    })
+    .slice(Math.max(messages.length - limit, 0));
 }
 
 export async function createEventMessage({ eventId, userId, content }) {
@@ -290,13 +299,14 @@ export async function createEventMessage({ eventId, userId, content }) {
 
   const eventMessagesRef = messagesRootRef.child(eventId);
   const messageRef = eventMessagesRef.push();
+  const createdAt = Date.now();
   const payload = {
     id: messageRef.key,
     eventId,
     userId,
     userName: profile.name,
     content: normalizedContent,
-    createdAt: admin.database.ServerValue.TIMESTAMP
+    createdAt
   };
 
   await messageRef.set(payload);
